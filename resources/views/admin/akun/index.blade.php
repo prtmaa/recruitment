@@ -281,7 +281,7 @@
                     <div class="col-md-6 mb-2"><small class="text-muted d-block">BPJS</small><span class="fw-medium">${profile.bpjs ?? '-'}</span></div>
                     <div class="col-md-6 mb-2"><small class="text-muted d-block">NPWP</small><span class="fw-medium">${profile.npwp ?? '-'}</span></div>
                     <div class="col-12 mb-2"><small class="text-muted d-block">Alamat KTP</small><span class="fw-medium">${profile.alamat ?? '-'}</span></div>
-                    <div class="col-12 mb-2"><small class="text-muted d-block">Domisili</small><span class="fw-medium">${profile.domisili ?? '-'}</span></div>
+                    <div class="col-12 mb-2"><small class="text-muted d-block">Domisili</small><span class="fw-medium">${profile.domisili_lengkap ?? '-'}</span></div>
                 </div>
 
                 <h6 class="fw-semibold text-primary mb-3"><i class="fas fa-graduation-cap me-1"></i> Pendidikan</h6>

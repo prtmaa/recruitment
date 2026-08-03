@@ -95,6 +95,19 @@
                 </div>
             </div>
 
+            {{-- Persebaran Wilayah Pelamar --}}
+            <div class="col-12 col-lg-12 mb-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h6 class="fw-semibold mb-0"><i class="fas fa-map-marked-alt text-primary me-1"></i> Persebaran
+                            Wilayah Pelamar</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartWilayah" height="120"></canvas>
+                    </div>
+                </div>
+            </div>
+
             {{-- Lowongan segera tutup --}}
             <div class="col-12 col-lg-6 mb-4">
                 <div class="card border-0 shadow-sm rounded-3 h-100">
@@ -557,5 +570,41 @@
                     hasilKosong.classList.remove('d-none');
                 });
         }
+    </script>
+    <script>
+        // Grafik persebaran wilayah pelamar (bar chart)
+        fetch(`{{ route('admin.dashboard.chartWilayah') }}`)
+            .then(res => res.json())
+            .then(data => {
+                new Chart(document.getElementById('chartWilayah'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(d => d.label),
+                        datasets: [{
+                            label: 'Jumlah Pelamar',
+                            data: data.map(d => d.total),
+                            backgroundColor: '#0d6efd',
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // horizontal bar, lebih enak dibaca kalau nama kabupaten panjang
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            });
     </script>
 @endpush

@@ -14,7 +14,7 @@ class DatadiriController extends Controller
 {
     public function index()
     {
-        $profile = ApplicantProfile::with('workExperiences')
+        $profile = ApplicantProfile::with(['workExperiences', 'province', 'city', 'district', 'village'])
             ->where('user_id', Auth::id())
             ->first();
 
@@ -51,7 +51,11 @@ class DatadiriController extends Controller
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
             'alamat' => ['required', 'string'],
-            'domisili' => ['required', 'string'],
+            'domisili_provinsi' => ['required', 'string', 'exists:indonesia_provinces,code'],
+            'domisili_kabupaten' => ['required', 'string', 'exists:indonesia_cities,code'],
+            'domisili_kecamatan' => ['required', 'string', 'exists:indonesia_districts,code'],
+            'domisili_desa' => ['required', 'string', 'exists:indonesia_villages,code'],
+            'domisili' => ['nullable', 'string', 'max:500'],
             'no_hp' => ['required', 'string', 'max:20'],
             'agama' => ['required', 'string', 'max:255'],
             'status' => ['required', 'string', 'max:255'],
@@ -85,11 +89,15 @@ class DatadiriController extends Controller
         $profile->fill([
             'user_id' => Auth::id(),
             'nik' => $validated['nik'],
-            'nama' => $validated['nama'],
+            'nama' => strtoupper($validated['nama']),
             'kelamin' => $validated['kelamin'],
-            'tempat_lahir' => $validated['tempat_lahir'] ?? null,
+            'tempat_lahir' => strtoupper($validated['tempat_lahir']) ?? null,
             'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
             'alamat' => $validated['alamat'] ?? null,
+            'domisili_provinsi' => $validated['domisili_provinsi'] ?? null,
+            'domisili_kabupaten' => $validated['domisili_kabupaten'] ?? null,
+            'domisili_kecamatan' => $validated['domisili_kecamatan'] ?? null,
+            'domisili_desa' => $validated['domisili_desa'] ?? null,
             'domisili' => $validated['domisili'] ?? null,
             'no_hp' => $validated['no_hp'] ?? null,
             'agama' => $validated['agama'] ?? null,
@@ -125,7 +133,10 @@ class DatadiriController extends Controller
             $profile->tempat_lahir,
             $profile->tanggal_lahir,
             $profile->alamat,
-            $profile->domisili,
+            $profile->domisili_provinsi,
+            $profile->domisili_kabupaten,
+            $profile->domisili_kecamatan,
+            $profile->domisili_desa,
             $profile->no_hp,
             $profile->agama,
             $profile->status,

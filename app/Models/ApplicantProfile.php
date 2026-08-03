@@ -5,6 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Laravolt\Indonesia\Models\Province;
+use Laravolt\Indonesia\Models\City;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Village;
 
 class ApplicantProfile extends Model
 {
@@ -47,6 +51,39 @@ class ApplicantProfile extends Model
     public function applications()
     {
         return $this->hasMany(JobApplication::class)->with('job')->latest('tanggal_melamar');
+    }
+
+    public function province()
+    {
+        return $this->belongsTo(\Laravolt\Indonesia\Models\Province::class, 'domisili_provinsi', 'code');
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(\Laravolt\Indonesia\Models\City::class, 'domisili_kabupaten', 'code');
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(\Laravolt\Indonesia\Models\District::class, 'domisili_kecamatan', 'code');
+    }
+
+    public function village()
+    {
+        return $this->belongsTo(\Laravolt\Indonesia\Models\Village::class, 'domisili_desa', 'code');
+    }
+
+    protected $appends = ['domisili_lengkap'];
+
+    public function getDomisiliLengkapAttribute()
+    {
+        return collect([
+            $this->domisili,
+            $this->village->name ?? null,
+            $this->district->name ?? null,
+            $this->city->name ?? null,
+            $this->province->name ?? null,
+        ])->filter()->implode(', ');
     }
 
     // public function jobs()

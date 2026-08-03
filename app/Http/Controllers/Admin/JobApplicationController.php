@@ -28,7 +28,11 @@ class JobApplicationController extends Controller
         $query = $job->applications()->with([
             'applicantProfile.user',
             'applicantProfile.workExperiences' => fn($q) => $q->orderByDesc('mulai_kerja'),
-            'applicantProfile.applications.job', // riwayat lamaran ke job lain
+            'applicantProfile.applications.job',
+            'applicantProfile.province',
+            'applicantProfile.city',
+            'applicantProfile.district',
+            'applicantProfile.village',
         ]);
 
         if ($request->filled('status')) {

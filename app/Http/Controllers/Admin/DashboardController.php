@@ -96,6 +96,10 @@ class DashboardController extends Controller
             'applications' => function ($q) {
                 $q->with('job')->orderByDesc('tanggal_melamar');
             },
+            'province',
+            'city',
+            'district',
+            'village',
         ])
             ->where('nik', $nik)
             ->first();
@@ -131,7 +135,7 @@ class DashboardController extends Controller
                 'bpjs'          => $profile->bpjs ?? '-',
                 'npwp'          => $profile->npwp ?? '-',
                 'alamat'        => $profile->alamat ?? '-',
-                'domisili'      => $profile->domisili ?? '-',
+                'domisili'      => $profile->domisili_lengkap ?: '-',
                 'pendidikan'    => $profile->pendidikan ?? '-',
                 'jurusan'       => $profile->jurusan ?? '-',
                 'sekolah'       => $profile->sekolah ?? '-',
@@ -161,5 +165,24 @@ class DashboardController extends Controller
                 ];
             }),
         ]);
+    }
+
+    public function chartWilayah()
+    {
+        $data = ApplicantProfile::selectRaw('domisili_kecamatan, count(*) as total')
+            ->whereNotNull('domisili_kecamatan')
+            ->groupBy('domisili_kecamatan')
+            ->with('district') // relasi belongsTo ke District, key 'code'
+            ->orderByDesc('total')
+            ->limit(15)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'label' => $item->district->name ?? 'Tidak diketahui',
+                    'total' => $item->total,
+                ];
+            });
+
+        return response()->json($data);
     }
 }

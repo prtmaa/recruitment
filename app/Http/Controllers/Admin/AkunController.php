@@ -59,7 +59,14 @@ class AkunController extends Controller
 
     public function detail(User $akun)
     {
-        $akun->load(['profile.workExperiences', 'profile.applications.job']);
+        $akun->load([
+            'profile.workExperiences',
+            'profile.applications.job',
+            'profile.province',
+            'profile.city',
+            'profile.district',
+            'profile.village',
+        ]);
 
         return response()->json($akun);
     }

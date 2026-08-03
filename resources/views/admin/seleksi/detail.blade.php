@@ -63,7 +63,7 @@
                         </div>
                         <div class="col-12">
                             <small class="text-muted d-block">Domisili</small>
-                            <span class="fw-medium">{{ $profile->domisili ?? '-' }}</span>
+                            <span class="fw-medium">{{ $profile->domisili_lengkap ?? '-' }}</span>
                         </div>
                     </div>
 

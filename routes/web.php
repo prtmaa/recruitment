@@ -13,6 +13,7 @@ use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\LamaranController;
 use App\Http\Controllers\Admin\JobApplicationController as AdminJobApplicationController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\WilayahController;
 
 // ==== Login pelamar via Google ====
 Route::get('/auth/google', [GoogleController::class, 'redirect']);
@@ -37,6 +38,13 @@ Route::middleware('auth')->group(function () {
         ->name('jobs.my-applications');
 
     Route::get('/lamaran', [LamaranController::class, 'index'])->name('lamaran.index');
+
+    Route::prefix('wilayah')->name('wilayah.')->group(function () {
+        Route::get('/provinces', [WilayahController::class, 'provinces'])->name('provinces');
+        Route::get('/cities/{provinceCode}', [WilayahController::class, 'cities']);
+        Route::get('/districts/{cityCode}', [WilayahController::class, 'districts']);
+        Route::get('/villages/{districtCode}', [WilayahController::class, 'villages']);
+    });
 });
 
 // ==== Login admin (route /login, /register dari Breeze) ====
@@ -47,6 +55,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/cari-nik', [AdminDashboardController::class, 'cariNik'])
         ->name('dashboard.cariNik');
+    Route::get('/dashboard/chart-wilayah', [AdminDashboardController::class, 'chartWilayah'])
+        ->name('dashboard.chartWilayah');
 
     Route::get('/job/data', [JobController::class, 'data'])->name('job.data');
     Route::resource('/job', JobController::class);

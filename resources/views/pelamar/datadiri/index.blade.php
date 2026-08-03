@@ -419,7 +419,7 @@
                         <label class="upload-label" for="cv">Upload Dokumen <span class="text-danger">*</span></label>
                         <input type="file" id="cv" name="cv" accept=".pdf" onchange="handleCvChange(event)">
                         <p class="upload-hint">Silahkan scan KTP, KK, Ijazah, Surat sehat terbaru, CV dalam 1 file - max:
-                            1024kb @if ($profile && $profile->cv)
+                            2048kb @if ($profile && $profile->cv)
                                 <span class="upload-hint text-success"> - Sudah Terupload</span>
                             @endif
                         </p>
@@ -514,10 +514,42 @@
                                         <textarea class="form-control" id="alamat" name="alamat" rows="3" required>{{ old('alamat', $profile->alamat ?? '') }}</textarea>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label" for="domisili">Domisili <span
-                                                class="text-danger">*</span></label>
-                                        <textarea class="form-control" id="domisili" name="domisili" rows="3" required>{{ old('domisili', $profile->domisili ?? '') }}</textarea>
+                                        <label class="form-label">Domisili <span class="text-danger">*</span></label>
                                     </div>
+                                    <div class="col-12 col-md-3">
+                                        <select name="domisili_provinsi" id="domisili_provinsi" class="form-select"
+                                            data-selected="{{ old('domisili_provinsi', $profile->domisili_provinsi ?? '') }}"
+                                            required>
+                                            <option value="">Pilih Provinsi</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <select name="domisili_kabupaten" id="domisili_kabupaten" class="form-select"
+                                            data-selected="{{ old('domisili_kabupaten', $profile->domisili_kabupaten ?? '') }}"
+                                            required disabled>
+                                            <option value="">Pilih Kabupaten</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <select name="domisili_kecamatan" id="domisili_kecamatan" class="form-select"
+                                            data-selected="{{ old('domisili_kecamatan', $profile->domisili_kecamatan ?? '') }}"
+                                            required disabled>
+                                            <option value="">Pilih Kecamatan</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <select name="domisili_desa" id="domisili_desa" class="form-select"
+                                            data-selected="{{ old('domisili_desa', $profile->domisili_desa ?? '') }}"
+                                            required disabled>
+                                            <option value="">Pilih Desa</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <textarea class="form-control" id="domisili" name="domisili" rows="2"
+                                            placeholder="Detail Alamat (Jalan, RT/RW, dll)">{{ old('domisili', $profile->domisili ?? '') }}</textarea>
+                                    </div>
+
                                     <div class="col-12 col-md-6">
                                         <label class="form-label" for="no_hp">No HP <span
                                                 class="text-danger">*</span></label>
@@ -768,11 +800,10 @@
     <script>
         // ==== Daftar field yang dihitung untuk Kelengkapan Profil ====
         const requiredFields = [
-            // Data Pribadi
             'nik', 'nama', 'kelamin', 'tempat_lahir', 'tanggal_lahir',
-            'alamat', 'domisili', 'no_hp', 'email', 'agama',
-            'status', 'bpjs', 'npwp',
-            // Pendidikan
+            'alamat',
+            'domisili_provinsi', 'domisili_kabupaten', 'domisili_kecamatan', 'domisili_desa',
+            'no_hp', 'email', 'agama', 'status', 'bpjs', 'npwp',
             'pendidikan', 'jurusan', 'sekolah'
         ];
 
@@ -961,4 +992,107 @@
             });
         </script>
     @endif
+    <script>
+        $(function() {
+            const $prov = $('#domisili_provinsi');
+            const $kab = $('#domisili_kabupaten');
+            const $kec = $('#domisili_kecamatan');
+            const $desa = $('#domisili_desa');
+
+            const selectedProv = $prov.data('selected');
+            const selectedKab = $kab.data('selected');
+            const selectedKec = $kec.data('selected');
+            const selectedDesa = $desa.data('selected');
+
+            function fillSelect($el, data, selectedValue = null) {
+                let options = '<option value="">Pilih</option>';
+                data.forEach(d => {
+                    const isSelected = selectedValue && String(d.code) === String(selectedValue) ?
+                        'selected' : '';
+                    options += `<option value="${d.code}" ${isSelected}>${d.name}</option>`;
+                });
+                $el.html(options);
+            }
+
+            function resetSelect(selectors) {
+                selectors.forEach(s => {
+                    $(s).html('<option value="">Pilih</option>').prop('disabled', true);
+                });
+            }
+
+            // Helper: panggil ulang hitung kelengkapan profil kalau fungsinya ada
+            function recalcKelengkapan() {
+                if (typeof hitungKelengkapanProfil === 'function') {
+                    hitungKelengkapanProfil();
+                }
+            }
+
+            $.get('{{ route('wilayah.provinces') }}', function(res) {
+                fillSelect($prov, res, selectedProv);
+
+                if (selectedProv) {
+                    loadKabupaten(selectedProv, selectedKab, function() {
+                        if (selectedKab) {
+                            loadKecamatan(selectedKab, selectedKec, function() {
+                                if (selectedKec) {
+                                    loadDesa(selectedKec, selectedDesa, recalcKelengkapan);
+                                } else {
+                                    recalcKelengkapan();
+                                }
+                            });
+                        } else {
+                            recalcKelengkapan();
+                        }
+                    });
+                } else {
+                    recalcKelengkapan();
+                }
+            });
+
+            function loadKabupaten(provCode, selected, callback) {
+                $.get('{{ url('wilayah/cities') }}/' + provCode, function(res) {
+                    fillSelect($kab, res, selected);
+                    $kab.prop('disabled', false);
+                    if (callback) callback();
+                });
+            }
+
+            function loadKecamatan(kabCode, selected, callback) {
+                $.get('{{ url('wilayah/districts') }}/' + kabCode, function(res) {
+                    fillSelect($kec, res, selected);
+                    $kec.prop('disabled', false);
+                    if (callback) callback();
+                });
+            }
+
+            function loadDesa(kecCode, selected, callback) {
+                $.get('{{ url('wilayah/villages') }}/' + kecCode, function(res) {
+                    fillSelect($desa, res, selected);
+                    $desa.prop('disabled', false);
+                    if (callback) callback();
+                });
+            }
+
+            $prov.on('change', function() {
+                let code = $(this).val();
+                resetSelect(['#domisili_kabupaten', '#domisili_kecamatan', '#domisili_desa']);
+                if (!code) return;
+                loadKabupaten(code, null);
+            });
+
+            $kab.on('change', function() {
+                let code = $(this).val();
+                resetSelect(['#domisili_kecamatan', '#domisili_desa']);
+                if (!code) return;
+                loadKecamatan(code, null);
+            });
+
+            $kec.on('change', function() {
+                let code = $(this).val();
+                resetSelect(['#domisili_desa']);
+                if (!code) return;
+                loadDesa(code, null);
+            });
+        });
+    </script>
 @endpush
