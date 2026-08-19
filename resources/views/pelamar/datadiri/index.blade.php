@@ -702,7 +702,7 @@
                                                         {{ $exp->masih_bekerja == '1' ? 'disabled' : '' }}>
                                                 </div>
                                                 <div class="col-12 col-md-4 d-flex align-items-center">
-                                                    <div class="form-check mt-4">
+                                                    <div class="form-check mb-3">
                                                         <input class="form-check-input checkbox-masih-bekerja"
                                                             type="checkbox" id="masih_bekerja_{{ $i + 1 }}"
                                                             name="pengalaman[{{ $i + 1 }}][masih_bekerja]"
@@ -911,7 +911,7 @@
                         <input type="date" class="form-control input-berhenti-kerja" name="pengalaman[${pengalamanIndex}][berhenti_kerja]">
                     </div>
                     <div class="col-12 col-md-4 d-flex align-items-center">
-                        <div class="form-check mt-4">
+                        <div class="form-check mb-3">
                             <input class="form-check-input checkbox-masih-bekerja" type="checkbox"
                                    id="masih_bekerja_${pengalamanIndex}" name="pengalaman[${pengalamanIndex}][masih_bekerja]" value="1">
                             <label class="form-check-label" for="masih_bekerja_${pengalamanIndex}">

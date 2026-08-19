@@ -47,7 +47,7 @@ class JobApplicationController extends Controller
             });
         }
 
-        $applications = $query->latest('tanggal_melamar')->paginate(15)->withQueryString();
+        $applications = $query->latest('tanggal_melamar')->get();
 
         return view('admin.seleksi.show', compact('job', 'applications'));
     }
@@ -59,10 +59,77 @@ class JobApplicationController extends Controller
             'catatan_hrd' => 'nullable|string|max:1000',
         ]);
 
+        $allowedTransitions = [
+            'pending'   => ['review', 'interview'],
+            'review'    => ['interview', 'rejected'],
+            'interview' => ['accepted', 'rejected'],
+            'accepted'  => [],
+            'rejected'  => [],
+        ];
+
+        $currentStatus = $application->status;
+        $newStatus = $request->status;
+
+        // Kalau status tidak berubah, izinkan (misal cuma update catatan)
+        if ($newStatus !== $currentStatus) {
+            $allowed = $allowedTransitions[$currentStatus] ?? [];
+
+            if (!in_array($newStatus, $allowed)) {
+                $statusLabel = [
+                    'pending'   => 'Menunggu',
+                    'review'    => 'Review',
+                    'interview' => 'Interview',
+                    'accepted'  => 'Diterima',
+                    'rejected'  => 'Ditolak',
+                ];
+
+                $message = "Status tidak bisa diubah langsung dari '{$statusLabel[$currentStatus]}' ke '{$statusLabel[$newStatus]}'.";
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                    ], 422);
+                }
+
+                return back()->withErrors(['status' => $message]);
+            }
+        }
+
         $application->update([
-            'status' => $request->status,
+            'status' => $newStatus,
             'catatan_hrd' => $request->catatan_hrd,
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $application->load(['applicantProfile.user', 'job.interviewSchedule']);
+
+            $statusConfig = [
+                'pending'   => ['label' => 'Menunggu', 'class' => 'secondary'],
+                'review'    => ['label' => 'Review', 'class' => 'info'],
+                'interview' => ['label' => 'Interview', 'class' => 'warning'],
+                'accepted'  => ['label' => 'Diterima', 'class' => 'success'],
+                'rejected'  => ['label' => 'Ditolak', 'class' => 'danger'],
+            ];
+            $config = $statusConfig[$application->status];
+
+            $badgeHtml = '<span class="badge badge-' . $config['class'] . '">' . $config['label'] . '</span>';
+
+            $aksiHtml = view('admin.seleksi.aksi', [
+                'app'     => $application,
+                'job'     => $application->job,
+                'profile' => $application->applicantProfile,
+            ])->render();
+
+            return response()->json([
+                'success'    => true,
+                'message'    => 'Status lamaran berhasil diperbarui.',
+                'app_id'     => $application->id,
+                'new_status' => $application->status, // <-- pastikan ini ada
+                'badge_html' => $badgeHtml,
+                'aksi_html'  => $aksiHtml,
+            ]);
+        }
 
         return back()->with('success', 'Status lamaran berhasil diperbarui.');
     }

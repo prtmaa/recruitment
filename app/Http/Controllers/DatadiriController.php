@@ -41,11 +41,16 @@ class DatadiriController extends Controller
                 Rule::requiredIf(!$profile || !$profile->cv),
                 'nullable',
                 'mimes:pdf',
-                'max:1024',
+                'max:2048',
             ],
 
             // Data Pribadi — wajib sesuai tanda *
-            'nik' => ['required', 'string', 'max:20'],
+            'nik' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('applicant_profiles', 'nik')->ignore($profile?->id),
+            ],
             'nama' => ['required', 'string', 'max:255'],
             'kelamin' => ['required', 'in:L,P'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
@@ -79,9 +84,13 @@ class DatadiriController extends Controller
             'pengalaman.*.masih_bekerja' => ['nullable'],
             'pengalaman.*.tanggung_jawab' => ['nullable', 'string'],
         ], [
-            // pesan custom biar lebih ramah, opsional
             'foto.required' => 'Foto wajib diupload.',
             'cv.required' => 'CV wajib diupload.',
+            'cv.mimes' => 'CV harus berupa file PDF.',
+            'cv.max' => 'Ukuran CV maksimal 2 MB.',
+            'foto.mimes' => 'Foto harus berupa file JPG, JPEG, atau PNG.',
+            'foto.max' => 'Ukuran foto maksimal 512 KB.',
+            'nik.unique' => 'NIK ini sudah terdaftar. Setiap NIK hanya boleh mendaftar satu kali.',
         ]);
 
         $profile = $profile ?? new ApplicantProfile(['user_id' => Auth::id()]);

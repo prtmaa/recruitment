@@ -11,7 +11,8 @@
             @endphp
             <div class="modal fade" id="statusModal{{ $app->id }}" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog">
-                    <form method="POST" action="{{ route('admin.seleksi.update-status', $app->id) }}">
+                    <form method="POST" action="{{ route('admin.seleksi.update-status', $app->id) }}"
+                        class="form-update-status" data-app-id="{{ $app->id }}">
                         @csrf
                         @method('PUT')
                         <div class="modal-content">
@@ -21,7 +22,8 @@
                             <div class="modal-body">
                                 <div class="mb-3">
                                     <label class="form-label small">Status</label>
-                                    <select name="status" class="form-control" required>
+                                    <select name="status" class="form-control select-status"
+                                        data-app-id="{{ $app->id }}" data-current="{{ $app->status }}" required>
                                         @foreach ($statusConfig as $key => $val)
                                             <option value="{{ $key }}"
                                                 {{ $app->status == $key ? 'selected' : '' }}>
