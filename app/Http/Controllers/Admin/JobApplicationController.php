@@ -35,9 +35,9 @@ class JobApplicationController extends Controller
             'applicantProfile.village',
         ]);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        // if ($request->filled('status')) {
+        //     $query->where('status', $request->status);
+        // }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -49,7 +49,10 @@ class JobApplicationController extends Controller
 
         $applications = $query->latest('tanggal_melamar')->get();
 
-        return view('admin.seleksi.show', compact('job', 'applications'));
+        // Kelompokkan pelamar per status untuk tampilan ringkasan
+        $groupedByStatus = $applications->groupBy('status');
+
+        return view('admin.seleksi.show', compact('job', 'applications', 'groupedByStatus'));
     }
 
     public function updateStatus(Request $request, JobApplication $application)
@@ -125,7 +128,7 @@ class JobApplicationController extends Controller
                 'success'    => true,
                 'message'    => 'Status lamaran berhasil diperbarui.',
                 'app_id'     => $application->id,
-                'new_status' => $application->status, // <-- pastikan ini ada
+                'new_status' => $application->status,
                 'badge_html' => $badgeHtml,
                 'aksi_html'  => $aksiHtml,
             ]);

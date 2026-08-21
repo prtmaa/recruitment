@@ -17,7 +17,7 @@
 @section('content')
     <div class="container-fluid">
 
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <div>
                 <h5 class="fw-semibold mb-1">{{ $job->judul }}</h5>
 
@@ -25,14 +25,14 @@
         </div>
 
         {{-- Filter --}}
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-body">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header">
                 <form method="GET" class="row g-2 align-items-center">
                     <div class="col-md-4">
                         <input type="text" name="search" class="form-control" placeholder="Cari nama / NIK..."
                             value="{{ request('search') }}">
                     </div>
-                    <div class="col-md-3">
+                    {{-- <div class="col-md-3">
                         <select name="status" class="form-control">
                             <option value="">Semua Status</option>
                             @foreach (['pending' => 'Menunggu', 'review' => 'Review', 'interview' => 'Interview', 'accepted' => 'Diterima', 'rejected' => 'Ditolak'] as $key => $label)
@@ -40,7 +40,7 @@
                                     {{ $label }}</option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> --}}
                     <div class="col-md-2">
                         <button class="btn btn-primary w-100">Filter</button>
                     </div>
@@ -52,9 +52,16 @@
                     </div>
                 </form>
             </div>
-        </div>
 
-        <div class="card border-0 shadow-sm">
+            @php
+                $statusConfig = [
+                    'pending' => ['label' => 'Menunggu', 'class' => 'secondary'],
+                    'review' => ['label' => 'Review', 'class' => 'info'],
+                    'interview' => ['label' => 'Interview', 'class' => 'warning'],
+                    'accepted' => ['label' => 'Diterima', 'class' => 'success'],
+                    'rejected' => ['label' => 'Ditolak', 'class' => 'danger'],
+                ];
+            @endphp
             <div class="card-body">
                 <div class="table-responsive">
                     <table id="tabel-pelamar" class="table align-middle mb-0">
@@ -70,13 +77,6 @@
                         <tbody>
                             @foreach ($applications as $app)
                                 @php
-                                    $statusConfig = [
-                                        'pending' => ['label' => 'Menunggu', 'class' => 'secondary'],
-                                        'review' => ['label' => 'Review', 'class' => 'info'],
-                                        'interview' => ['label' => 'Interview', 'class' => 'warning'],
-                                        'accepted' => ['label' => 'Diterima', 'class' => 'success'],
-                                        'rejected' => ['label' => 'Ditolak', 'class' => 'danger'],
-                                    ];
                                     $config = $statusConfig[$app->status];
                                     $profile = $app->applicantProfile;
                                 @endphp
@@ -118,6 +118,70 @@
             </div>
         </div>
 
+        {{-- Ringkasan Pelamar per Status --}}
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-white">
+                <h6 class="fw-semibold mb-0">Ringkasan Pelamar per Status</h6>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="statusTab" role="tablist">
+                    @foreach ($statusConfig as $key => $cfg)
+                        @php $count = $groupedByStatus->get($key, collect())->count(); @endphp
+                        <li class="nav-item">
+                            <button class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
+                                data-bs-target="#tab-{{ $key }}" type="button">
+                                {{ $cfg['label'] }}
+                                <span class="badge badge-{{ $cfg['class'] }} ms-1"
+                                    id="count-badge-{{ $key }}">{{ $count }}</span>
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
+
+                <div class="tab-content pt-3">
+                    @foreach ($statusConfig as $key => $cfg)
+                        @php $list = $groupedByStatus->get($key, collect()); @endphp
+                        <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="tab-{{ $key }}">
+
+                            <p class="text-muted mb-0 empty-placeholder" id="empty-{{ $key }}"
+                                style="{{ $list->isEmpty() ? '' : 'display:none' }}">
+                                Belum ada pelamar dengan status {{ strtolower($cfg['label']) }}.
+                            </p>
+
+                            <div class="list-group" id="list-group-{{ $key }}">
+                                @foreach ($list as $app)
+                                    @php $profile = $app->applicantProfile; @endphp
+                                    <div class="list-group-item d-flex justify-content-between align-items-center"
+                                        id="ringkasan-item-{{ $app->id }}">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img src="{{ $profile->foto ? asset('storage/' . $profile->foto) : asset('images/default-avatar.png') }}"
+                                                class="rounded-circle mr-3" width="36" height="36"
+                                                style="object-fit:cover">
+                                            <div>
+                                                <span class="fw-semibold d-block">{{ $profile->nama }}</span>
+                                                <small class="text-muted">
+                                                    {{ $app->tanggal_melamar->translatedFormat('d M Y') }} &middot;
+                                                    {{ $profile->pendidikan }}@if ($profile->jurusan)
+                                                        - {{ $profile->jurusan }}
+                                                    @endif
+                                                </small>
+                                            </div>
+                                        </div>
+                                        @include('admin.seleksi.aksi', [
+                                            'app' => $app,
+                                            'job' => $job,
+                                            'profile' => $profile,
+                                        ])
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+
         @include('admin.seleksi.form')
         @include('admin.seleksi.detail')
         @include('admin.seleksi.info')
@@ -129,7 +193,6 @@
     <script>
         let dtPelamar;
 
-        // Aturan transisi status yang diizinkan (termasuk status saat ini sendiri)
         const allowedTransitions = {
             pending: ['pending', 'review', 'interview'],
             review: ['review', 'interview', 'rejected'],
@@ -138,12 +201,26 @@
             rejected: ['rejected'],
         };
 
-        // Sumber kebenaran status per aplikasi — diisi awal dari data-current,
-        // lalu diupdate tiap kali AJAX sukses. JANGAN andalkan $.data() DOM lagi.
         const currentStatusMap = {};
 
+        // Pindahkan item ringkasan dari tab status lama ke tab status baru
+        function pindahkanItemRingkasan(appId, oldStatus, newStatus) {
+            const $item = $('#ringkasan-item-' + appId);
+            if ($item.length === 0 || oldStatus === newStatus) return;
+
+            $item.prependTo('#list-group-' + newStatus);
+
+            const $oldList = $('#list-group-' + oldStatus);
+            $('#empty-' + oldStatus).toggle($oldList.children().length === 0);
+            $('#empty-' + newStatus).hide();
+
+            const $oldBadge = $('#count-badge-' + oldStatus);
+            const $newBadge = $('#count-badge-' + newStatus);
+            $oldBadge.text(Math.max(0, parseInt($oldBadge.text()) - 1));
+            $newBadge.text(parseInt($newBadge.text()) + 1);
+        }
+
         $(function() {
-            // Inisialisasi map dari atribut data-current yang dirender server
             $('.select-status').each(function() {
                 const $s = $(this);
                 const appId = $s.data('app-id');
@@ -154,10 +231,10 @@
                 stateSave: true,
                 stateDuration: -1,
                 lengthMenu: [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, "Semua"]
+                    [5, 10, 25, -1],
+                    [5, 10, 25, "Semua"]
                 ],
-                pageLength: 10,
+                pageLength: 5,
                 order: [
                     [2, 'desc']
                 ],
@@ -183,8 +260,6 @@
             });
         });
 
-        // Saat modal ubah status dibuka: disable opsi yang tidak diizinkan
-        // berdasarkan currentStatusMap (bukan atribut DOM)
         $(document).on('shown.bs.modal', '[id^=statusModal]', function() {
             const $select = $(this).find('.select-status');
             const appId = $select.data('app-id');
@@ -198,7 +273,6 @@
             });
         });
 
-        // Handle submit form ubah status via AJAX
         $(document).on('submit', '.form-update-status', function(e) {
             e.preventDefault();
 
@@ -217,17 +291,16 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 success: function(res) {
-                    // Update sel status & aksi tanpa reload
                     $('#status-cell-' + appId).html(res.badge_html);
                     $('#aksi-cell-' + appId).html(res.aksi_html);
 
                     const $row = $('#status-cell-' + appId).closest('tr');
                     dtPelamar.row($row).invalidate().draw(false);
 
-                    // Update SATU-SATUNYA sumber kebenaran status
+                    pindahkanItemRingkasan(appId, currentStatusMap[appId], res.new_status);
+
                     currentStatusMap[appId] = res.new_status;
 
-                    // Sinkronkan juga atribut DOM biar konsisten kalau ada kode lain yang baca
                     $('#statusModal' + appId + ' .select-status')
                         .attr('data-current', res.new_status)
                         .data('current', res.new_status);

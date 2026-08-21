@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h6 class="modal-title fw-semibold mb-0">Panduan Alur Status Lamaran</h6>
+                <h6 class="modal-title fw-semibold mb-0">Alur Status Lamaran</h6>
             </div>
             <div class="modal-body">
                 <p class="text-muted small mb-4">
