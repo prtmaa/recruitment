@@ -84,7 +84,6 @@
                                 </div>
                             @else
                                 <div class="alert alert-danger py-2 px-3 mb-3 small">
-                                    <i class="fas fa-xmark me-1"></i>
                                     Lamaran ini tidak dilanjutkan ke tahap berikutnya.
                                 </div>
                             @endif
@@ -97,11 +96,11 @@
                             @endif
 
                             {{-- Toggle Riwayat --}}
-                            <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2"
+                            <button
+                                class="btn btn-sm btn-link p-0 text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2 riwayat-toggle"
                                 type="button" data-bs-toggle="collapse" data-bs-target="#riwayat{{ $item->id }}">
-                                <i class="fas fa-clock-rotate-left"></i>
-                                Lihat Riwayat Status
-                                <i class="fas fa-chevron-down chevron-icon small"></i>
+                                Riwayat Status
+                                <i class="fas fa-chevron-up chevron-icon ml-1"></i>
                             </button>
 
                             <div class="collapse mt-3" id="riwayat{{ $item->id }}">
@@ -152,6 +151,14 @@
 
         .lamaran-card:hover {
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .riwayat-toggle {
+            color: #495057;
+        }
+
+        .riwayat-toggle:hover {
+            color: #8e1a25;
         }
 
         .chevron-icon {

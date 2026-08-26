@@ -35,6 +35,15 @@ class JobApplicationController extends Controller
                 ->with('error', 'Lengkapi profil Anda terlebih dahulu sebelum melamar.');
         }
 
+        $pernahDitolak = JobApplication::where('applicant_profile_id', $profile->id)
+            ->where('job_id', $job->id)
+            ->where('status', 'rejected')
+            ->exists();
+
+        if ($pernahDitolak) {
+            return back()->with('error', 'Anda pernah ditolak untuk posisi ini dan tidak dapat melamar lagi.');
+        }
+
         $adaLamaranAktif = JobApplication::where('applicant_profile_id', $profile->id)
             ->where('status', '!=', 'rejected')
             ->whereHas('job', function ($q) {

@@ -18,10 +18,8 @@
             <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
                 <i class="fas fa-exclamation-circle mr-2"></i>
                 <div>
-                    Masih memiliki lamaran aktif untuk posisi
-                    <strong>{{ $lamaranAktif->job->judul ?? '-' }}</strong>.
-                    Hanya bisa melamar 1 lowongan dalam satu waktu.
-                    Silakan tunggu proses lamaran tersebut selesai sebelum melamar posisi lain.
+                    Lamaran posisi <strong>{{ $lamaranAktif->job->judul ?? '-' }}</strong> masih diproses.
+                    Anda baru bisa melamar posisi lain setelah proses ini selesai.
                 </div>
             </div>
         @endif
@@ -31,17 +29,28 @@
 
                 @forelse ($job as $j)
                     @php
-                        $sudahMelamar = false;
+                        $lamaranJobIni = null;
                         if (auth()->check() && auth()->user()->profile) {
-                            $sudahMelamar = $j
+                            $lamaranJobIni = $j
                                 ->applications()
                                 ->where('applicant_profile_id', auth()->user()->profile->id)
-                                ->exists();
+                                ->latest()
+                                ->first();
                         }
+
+                        $sudahMelamar = $lamaranJobIni && $lamaranJobIni->status !== 'rejected';
+                        $bisaBatal = $lamaranJobIni && $lamaranJobIni->status === 'pending';
                         $sudahTutup = $j->tanggal_tutup < now()->toDateString() || !$j->is_active;
 
-                        // user boleh apply kalau: belum apply job ini, job belum tutup,
-                        // dan (tidak sedang punya lamaran aktif ATAU lamaran aktifnya ya job ini)
+                        $pernahDitolakJobIni = false;
+                        if (auth()->check() && auth()->user()->profile) {
+                            $pernahDitolakJobIni = $j
+                                ->applications()
+                                ->where('applicant_profile_id', auth()->user()->profile->id)
+                                ->where('status', 'rejected')
+                                ->exists();
+                        }
+
                         $adaLamaranAktifLain = $lamaranAktif && $lamaranAktif->job_id !== $j->id;
                     @endphp
 
@@ -57,8 +66,8 @@
                                             type="button" data-bs-toggle="collapse"
                                             data-bs-target="#jobDetail{{ $j->id }}" aria-expanded="false"
                                             aria-controls="jobDetail{{ $j->id }}">
-                                            <i class="fas fa-info-circle text-primary"></i>
-                                            <span> Lihat Deskripsi & Persyaratan</span>
+                                            <i class="fas fa-info-circle text-primary mr-1"></i>
+                                            <span> Deskripsi & Persyaratan</span>
                                             <i class="fas fa-chevron-down chevron-icon small"></i>
                                         </button>
 
@@ -86,23 +95,45 @@
                                             Lowongan Ditutup
                                         </button>
                                     @elseif ($sudahMelamar)
-                                        <button class="btn btn-outline-success rounded-pill px-4 mb-md-3 order-2 order-md-1"
-                                            disabled>
-                                            <i class="fas fa-check me-1"></i> Sudah Melamar
+                                        <div class="d-flex flex-row align-items-center gap-2 order-2 order-md-1 mb-md-3">
+                                            <button class="btn btn-outline-success rounded-pill px-4" disabled>
+                                                <i class="fas fa-check me-1"></i> Melamar
+                                            </button>
+
+                                            @if ($bisaBatal)
+                                                <form id="form-batal-{{ $lamaranJobIni->id }}"
+                                                    action="{{ route('lamaran.batal', $lamaranJobIni->id) }}"
+                                                    method="POST">
+                                                    @csrf
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-danger rounded-pill px-3 btn-batal"
+                                                        data-form="form-batal-{{ $lamaranJobIni->id }}"
+                                                        data-judul="{{ $j->judul }}">
+                                                        <i class="fas fa-times me-1"></i> Batal
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    @elseif ($pernahDitolakJobIni)
+                                        <button class="btn btn-outline-danger rounded-pill px-4 mb-md-3 order-2 order-md-1"
+                                            disabled data-bs-toggle="tooltip" title="Anda pernah ditolak untuk posisi ini">
+                                            <i class="fas fa-ban me-1"></i> Tidak Bisa
                                         </button>
                                     @elseif ($adaLamaranAktifLain)
                                         <button
                                             class="btn btn-outline-secondary rounded-pill px-4 mb-md-3 order-2 order-md-1"
                                             disabled data-bs-toggle="tooltip"
                                             title="Kamu masih punya lamaran aktif di posisi lain">
-                                            <i class="fas fa-lock me-1"></i> Tidak Bisa Melamar
+                                            <i class="fas fa-lock me-1"></i> Belum Bisa
                                         </button>
                                     @else
-                                        <form id="form-apply-{{ $j->id }}" action="{{ route('jobs.apply', $j->id) }}"
-                                            method="POST" class="order-2 order-md-1 mb-md-3">
+                                        <form id="form-apply-{{ $j->id }}"
+                                            action="{{ route('jobs.apply', $j->id) }}" method="POST"
+                                            class="order-2 order-md-1 mb-md-3">
                                             @csrf
                                             <button type="button" class="btn btn-primary rounded-pill px-4 btn-apply"
-                                                data-form="form-apply-{{ $j->id }}" data-judul="{{ $j->judul }}">
+                                                data-form="form-apply-{{ $j->id }}"
+                                                data-judul="{{ $j->judul }}">
                                                 Apply
                                             </button>
                                         </form>
@@ -305,6 +336,28 @@
                     confirmButtonText: 'Ya, Lamar',
                     cancelButtonText: 'Batal',
                     confirmButtonColor: '#8e1a25',
+                    cancelButtonColor: '#6c757d'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById(formId).submit();
+                    }
+                });
+            });
+        });
+
+        document.querySelectorAll('.btn-batal').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const formId = this.dataset.form;
+                const judul = this.dataset.judul;
+
+                Swal.fire({
+                    title: 'Batalkan Lamaran?',
+                    text: `Yakin ingin membatalkan lamaran untuk posisi ${judul}?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Batalkan',
+                    cancelButtonText: 'Tidak',
+                    confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d'
                 }).then((result) => {
                     if (result.isConfirmed) {

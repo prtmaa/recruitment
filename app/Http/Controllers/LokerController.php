@@ -32,4 +32,21 @@ class LokerController extends Controller
 
         return view('pelamar.loker.index', compact('job', 'setting', 'lamaranAktif'));
     }
+
+    public function batalLamar(JobApplication $application)
+    {
+        $profile = auth()->user()->profile;
+
+        if (!$profile || $application->applicant_profile_id !== $profile->id) {
+            abort(403);
+        }
+
+        if ($application->status !== 'pending') {
+            return back()->with('error', 'Lamaran tidak bisa dibatalkan karena sudah diproses.');
+        }
+
+        $application->delete();
+
+        return back()->with('success', 'Lamaran berhasil dibatalkan.');
+    }
 }

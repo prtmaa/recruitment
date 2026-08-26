@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/datadiri', [DatadiriController::class, 'store'])->name('datadiri.store');
 
     Route::get('/loker', [LokerController::class, 'index'])->name('loker.index');
+    Route::post('/lamaran/{application}/batal', [LokerController::class, 'batalLamar'])
+        ->name('lamaran.batal');
 
     Route::post('/jobs/{job}/apply', [JobApplicationController::class, 'apply'])
         ->name('jobs.apply');
