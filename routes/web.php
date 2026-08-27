@@ -66,6 +66,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/seleksi', [AdminJobApplicationController::class, 'index'])->name('seleksi.index');
     Route::get('/seleksi/{job}', [AdminJobApplicationController::class, 'show'])->name('seleksi.show');
     Route::put('/seleksi/{application}/status', [AdminJobApplicationController::class, 'updateStatus'])->name('seleksi.update-status');
+    Route::get('seleksi/{job}/export', [AdminJobApplicationController::class, 'export'])
+        ->name('seleksi.export');
+    Route::post('bulk-update-status', [AdminJobApplicationController::class, 'bulkUpdateStatus'])
+        ->name('seleksi.bulk-update-status');
 
     Route::get('/job/{job}/interview', [JobController::class, 'getInterview'])->name('job.interview.get');
     Route::post('/job/{job}/interview', [JobController::class, 'saveInterview'])->name('job.interview.save');
